@@ -19,8 +19,9 @@ pair_map = {
     "ETH/USD": "ETH-USD"
 }
 
-# 2. Timeframe والا سسٹم
+# 2. Timeframe والا سسٹم - اب 1 Minute بھی شامل ہے
 time_map = {
+    "1 Minute": "1m",
     "5 Minute": "5m",
     "15 Minute": "15m",
     "30 Minute": "30m",
@@ -38,8 +39,10 @@ with col2:
 pair = pair_map[choice_pair]
 interval = time_map[choice_time]
 
-# Period Logic - yfinance کے لیے
-if interval in ["5m", "15m"]:
+# Period Logic
+if interval == "1m":
+    period = "1d"
+elif interval in ["5m", "15m"]:
     period = "5d"
 elif interval in ["30m", "1h"]:
     period = "20d"
@@ -75,15 +78,11 @@ if st.button(f"🚀 {choice_pair} کا {choice_time} پر سگنل لو", use_co
                 last_rsi = float(rsi.iloc[-1])
                 last_atr = float(atr.iloc[-1])
 
-                # Pro Logic
                 buy_condition = last_ema9 > last_ema21 and last_ema21 > last_ema50 and last_rsi > 55
                 sell_condition = last_ema9 < last_ema21 and last_ema21 < last_ema50 and last_rsi < 45
-                strong_buy = last_rsi > 65
-                strong_sell = last_rsi < 35
 
                 st.divider()
                 st.subheader(f"📊 {choice_pair} | {choice_time}")
-                
                 m1, m2, m3 = st.columns(3)
                 m1.metric("قیمت", f"{last_close:.4f}")
                 m2.metric("RSI", f"{last_rsi:.1f}")
@@ -93,46 +92,17 @@ if st.button(f"🚀 {choice_pair} کا {choice_time} پر سگنل لو", use_co
                     sl = last_close - (last_atr * 1.8)
                     tp1 = last_close + (last_atr * 1.5)
                     tp2 = last_close + (last_atr * 3)
-                    if strong_buy:
-                        st.success(f"### 🟢 STRONG BUY - {choice_pair}")
-                        st.balloons()
-                    else:
-                        st.success(f"### 🟢 BUY - {choice_pair}")
-                    
-                    st.markdown(f"""
-                    **Timeframe:** `{choice_time}`  
-                    **Entry:** `{last_close:.5f}`  
-                    **Stop Loss:** `{sl:.5f}` 🔴  
-                    **TP 1:** `{tp1:.5f}` (50% بند کریں)  
-                    **TP 2:** `{tp2:.5f}` (باقی ہولڈ)  
-                    """)
-
+                    st.success(f"### 🟢 BUY - {choice_pair}")
+                    st.markdown(f"**Entry:** `{last_close:.5f}`\n**SL:** `{sl:.5f}` 🔴\n**TP1:** `{tp1:.5f}`\n**TP2:** `{tp2:.5f}`")
                 elif sell_condition:
                     sl = last_close + (last_atr * 1.8)
                     tp1 = last_close - (last_atr * 1.5)
                     tp2 = last_close - (last_atr * 3)
-                    if strong_sell:
-                        st.error(f"### 🔴 STRONG SELL - {choice_pair}")
-                    else:
-                        st.error(f"### 🔴 SELL - {choice_pair}")
-                    
-                    st.markdown(f"""
-                    **Timeframe:** `{choice_time}`  
-                    **Entry:** `{last_close:.5f}`  
-                    **Stop Loss:** `{sl:.5f}` 🔴  
-                    **TP 1:** `{tp1:.5f}` (50% بند کریں)  
-                    **TP 2:** `{tp2:.5f}` (باقی ہولڈ)  
-                    """)
+                    st.error(f"### 🔴 SELL - {choice_pair}")
+                    st.markdown(f"**Entry:** `{last_close:.5f}`\n**SL:** `{sl:.5f}` 🔴\n**TP1:** `{tp1:.5f}`\n**TP2:** `{tp2:.5f}`")
                 else:
-                    st.warning(f"### 🟡 WAIT - {choice_pair} پر ابھی کوئی سگنل نہیں")
-                    st.write(f"RSI {last_rsi:.1f} ہے، مارکیٹ سائیڈ وے ہے۔ {choice_time} پر اگلی کینڈل کا انتظار کریں۔")
-
-                st.divider()
+                    st.warning(f"### 🟡 WAIT - {choice_pair} پر کوئی سگنل نہیں")
+                
                 st.line_chart(close.tail(100))
-                st.caption(f"یہ سگنل {choice_time} ٹائم فریم کے لیے ہے۔ SL/TP ATR پر مبنی ہیں۔")
-
         except Exception as e:
             st.error(f"Error: {e}")
-
-st.divider()
-st.info("طریقہ: اوپر سے Pair اور Candle Time سلیکٹ کریں، پھر بٹن دبائیں۔")
