@@ -3,92 +3,136 @@ import yfinance as yf
 import pandas as pd
 import ta
 
-st.set_page_config(page_title="Pro Forex AI", layout="centered")
-st.title("🚀 PRO Forex AI Signals")
-st.caption("Powered by MT5 Logic - TP & SL ke saath")
+st.set_page_config(page_title="AI Forex Bot", layout="centered")
+st.title("🤖 AI Forex Bot - Pro")
+st.caption("Pair + Timeframe والا اصلی بوٹ")
 
+# 1. Pair والا سسٹم
 pair_map = {
     "EUR/USD": "EURUSD=X",
     "GBP/USD": "GBPUSD=X",
     "USD/JPY": "USDJPY=X",
+    "USD/CHF": "CHF=X",
+    "AUD/USD": "AUDUSD=X",
     "Gold (XAU/USD)": "GC=F",
-    "BTC/USD": "BTC-USD"
+    "BTC/USD": "BTC-USD",
+    "ETH/USD": "ETH-USD"
 }
 
-choice = st.selectbox("Pair Select Karo", list(pair_map.keys()))
-pair = pair_map[choice]
+# 2. Timeframe والا سسٹم
+time_map = {
+    "5 Minute": "5m",
+    "15 Minute": "15m",
+    "30 Minute": "30m",
+    "1 Hour": "1h",
+    "4 Hour": "4h",
+    "1 Day": "1d"
+}
 
-if st.button("🔍 PRO Analysis Karo", use_container_width=True):
-    with st.spinner("AI Analysis kar raha hai..."):
+col1, col2 = st.columns(2)
+with col1:
+    choice_pair = st.selectbox("Pair منتخب کریں", list(pair_map.keys()))
+with col2:
+    choice_time = st.selectbox("Candle Timeframe", list(time_map.keys()))
+
+pair = pair_map[choice_pair]
+interval = time_map[choice_time]
+
+# Period Logic - yfinance کے لیے
+if interval in ["5m", "15m"]:
+    period = "5d"
+elif interval in ["30m", "1h"]:
+    period = "20d"
+else:
+    period = "100d"
+
+if st.button(f"🚀 {choice_pair} کا {choice_time} پر سگنل لو", use_container_width=True, type="primary"):
+    with st.spinner(f"{choice_pair} کا {choice_time} پر تجزیہ ہو رہا ہے..."):
         try:
-            data = yf.download(pair, period="10d", interval="1h", auto_adjust=True)
-            if data.empty:
-                st.error("Data nahi mila, dobara try karo")
+            data = yf.download(pair, period=period, interval=interval, auto_adjust=True)
+            if data.empty or len(data) < 50:
+                st.error("ڈیٹا کم ہے، دوسرا Timeframe ٹرائی کریں")
             else:
                 close = data['Close']
-                if isinstance(close, pd.DataFrame):
-                    close = close.iloc[:,0]
                 high = data['High']
                 low = data['Low']
-                if isinstance(high, pd.DataFrame):
+                if isinstance(close, pd.DataFrame):
+                    close = close.iloc[:,0]
                     high = high.iloc[:,0]
-                if isinstance(low, pd.DataFrame):
                     low = low.iloc[:,0]
 
                 close = close.dropna()
-                ema20 = ta.trend.ema_indicator(close, window=20)
+                ema9 = ta.trend.ema_indicator(close, window=9)
+                ema21 = ta.trend.ema_indicator(close, window=21)
                 ema50 = ta.trend.ema_indicator(close, window=50)
                 rsi = ta.momentum.rsi(close, window=14)
                 atr = ta.volatility.average_true_range(high, low, close, window=14)
 
                 last_close = float(close.iloc[-1])
-                last_ema20 = float(ema20.iloc[-1])
+                last_ema9 = float(ema9.iloc[-1])
+                last_ema21 = float(ema21.iloc[-1])
                 last_ema50 = float(ema50.iloc[-1])
                 last_rsi = float(rsi.iloc[-1])
                 last_atr = float(atr.iloc[-1])
 
-                # Logic
-                is_buy = last_ema20 > last_ema50 and last_rsi > 52
-                is_sell = last_ema20 < last_ema50 and last_rsi < 48
+                # Pro Logic
+                buy_condition = last_ema9 > last_ema21 and last_ema21 > last_ema50 and last_rsi > 55
+                sell_condition = last_ema9 < last_ema21 and last_ema21 < last_ema50 and last_rsi < 45
+                strong_buy = last_rsi > 65
+                strong_sell = last_rsi < 35
 
                 st.divider()
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Live Price", f"{last_close:.4f}")
-                col2.metric("RSI (14)", f"{last_rsi:.1f}")
-                col3.metric("Trend", "UP" if last_ema20 > last_ema50 else "DOWN")
+                st.subheader(f"📊 {choice_pair} | {choice_time}")
+                
+                m1, m2, m3 = st.columns(3)
+                m1.metric("قیمت", f"{last_close:.4f}")
+                m2.metric("RSI", f"{last_rsi:.1f}")
+                m3.metric("ATR", f"{last_atr:.4f}")
 
-                if is_buy:
-                    st.success("### 🟢 STRONG BUY SIGNAL")
-                    sl = last_close - (last_atr * 1.5)
+                if buy_condition:
+                    sl = last_close - (last_atr * 1.8)
                     tp1 = last_close + (last_atr * 1.5)
                     tp2 = last_close + (last_atr * 3)
-                    conf = 85 if last_rsi > 60 else 72
-                    st.write(f"**Confidence: {conf}%**")
-                    st.write(f"**Entry:** {last_close:.4f}")
-                    st.write(f"**Stop Loss:** {sl:.4f} 🔴")
-                    st.write(f"**Take Profit 1:** {tp1:.4f} 🟢")
-                    st.write(f"**Take Profit 2:** {tp2:.4f} 🟢🟢")
-                    st.info("Tareeqa: TP1 pe 50% profit book karlo, baqi TP2 tak hold karo")
+                    if strong_buy:
+                        st.success(f"### 🟢 STRONG BUY - {choice_pair}")
+                        st.balloons()
+                    else:
+                        st.success(f"### 🟢 BUY - {choice_pair}")
+                    
+                    st.markdown(f"""
+                    **Timeframe:** `{choice_time}`  
+                    **Entry:** `{last_close:.5f}`  
+                    **Stop Loss:** `{sl:.5f}` 🔴  
+                    **TP 1:** `{tp1:.5f}` (50% بند کریں)  
+                    **TP 2:** `{tp2:.5f}` (باقی ہولڈ)  
+                    """)
 
-                elif is_sell:
-                    st.error("### 🔴 STRONG SELL SIGNAL")
-                    sl = last_close + (last_atr * 1.5)
+                elif sell_condition:
+                    sl = last_close + (last_atr * 1.8)
                     tp1 = last_close - (last_atr * 1.5)
                     tp2 = last_close - (last_atr * 3)
-                    conf = 85 if last_rsi < 40 else 72
-                    st.write(f"**Confidence: {conf}%**")
-                    st.write(f"**Entry:** {last_close:.4f}")
-                    st.write(f"**Stop Loss:** {sl:.4f} 🔴")
-                    st.write(f"**Take Profit 1:** {tp1:.4f} 🟢")
-                    st.write(f"**Take Profit 2:** {tp2:.4f} 🟢🟢")
-                    st.info("Tareeqa: TP1 pe 50% profit book karlo, baqi TP2 tak hold karo")
+                    if strong_sell:
+                        st.error(f"### 🔴 STRONG SELL - {choice_pair}")
+                    else:
+                        st.error(f"### 🔴 SELL - {choice_pair}")
+                    
+                    st.markdown(f"""
+                    **Timeframe:** `{choice_time}`  
+                    **Entry:** `{last_close:.5f}`  
+                    **Stop Loss:** `{sl:.5f}` 🔴  
+                    **TP 1:** `{tp1:.5f}` (50% بند کریں)  
+                    **TP 2:** `{tp2:.5f}` (باقی ہولڈ)  
+                    """)
                 else:
-                    st.warning("### 🟡 WAIT - No Clear Trade")
-                    st.write("Market sideways hai, thodi der baad check karo")
+                    st.warning(f"### 🟡 WAIT - {choice_pair} پر ابھی کوئی سگنل نہیں")
+                    st.write(f"RSI {last_rsi:.1f} ہے، مارکیٹ سائیڈ وے ہے۔ {choice_time} پر اگلی کینڈل کا انتظار کریں۔")
 
                 st.divider()
-                st.line_chart(close.tail(150))
-                st.caption("Note: Ye AI analysis hai, 100% guarantee nahi. Apna risk management zaroor karo.")
+                st.line_chart(close.tail(100))
+                st.caption(f"یہ سگنل {choice_time} ٹائم فریم کے لیے ہے۔ SL/TP ATR پر مبنی ہیں۔")
 
         except Exception as e:
             st.error(f"Error: {e}")
+
+st.divider()
+st.info("طریقہ: اوپر سے Pair اور Candle Time سلیکٹ کریں، پھر بٹن دبائیں۔")
