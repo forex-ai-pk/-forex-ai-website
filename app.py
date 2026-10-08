@@ -4,7 +4,7 @@ import pandas as pd
 import ta
 import random
 
-st.set_page_config(page_title="ALONE BOAT", layout="centered")
+st.set_page_config(page_title="ALONE BOT", layout="centered")
 
 st.markdown("""
 <style>
@@ -14,7 +14,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="big-board"><h1>😎 ALONE BOAT 😎</h1><p>MT5 | QUOTEX | POCKET OPTION | 16 PATTERNS</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="big-board"><h1>😎 ALONE BOT 😎</h1><p>MT5 | QUOTEX | POCKET OPTION | 16 PATTERNS</p></div>', unsafe_allow_html=True)
 
 BROKERS = ["MT5", "QUOTEX", "Pocket Option"]
 PAIRS = {"EUR/USD": "EURUSD=X", "GBP/USD": "GBPUSD=X", "AUD/CHF": "AUDCHF=X", "EUR/JPY": "EURJPY=X", "GBP/JPY": "GBPJPY=X", "USD/JPY": "USDJPY=X"}
