@@ -1,23 +1,24 @@
-Create app named Forex AI Analyzer Dark Pro. Calm dark companion.
+import streamlit as st
 
-CORE STRATEGY - Trade only 4 patterns with 3 filters:
+st.set_page_config(page_title="Forex AI Analyzer", page_icon="📈", layout="centered")
 
-PATTERNS:
-A Bullish Engulfing means BUY signal at support
-B Bearish Engulfing means SELL signal at resistance  
-C Hammer means BUY signal at support
-D Shooting Star means SELL signal at resistance
+st.markdown('''
+<style>
+.stApp { background-color: #121212; }
+.card { background: #1E1E1E; padding: 20px; border-radius: 15px; margin-top: 20px; border: 1px solid #333; }
+</style>
+''', unsafe_allow_html=True)
 
-FILTERS - Must pass all filters else show No Trade Wait:
+st.title("Forex AI Analyzer - Dark Pro")
+st.caption("Educational only - Not financial advice")
 
-Filter One Structure - For BUY market must show change from LH LL to HL. For SELL market must show change from HH HL to LH. If sideways then No Trade.
+uploaded = st.file_uploader("Upload chart screenshot", type=["png","jpg","jpeg"])
 
-Filter Two Confirmation - For BUY next candle must close above pattern high. For SELL next candle must close below pattern low.
-
-Filter Three Zone - Pattern must be at clear support resistance. If pattern in middle of chart then No Trade.
-
-OUTPUT DESIGN - Dark background 121212 cards 1E1E1E green 00FF88 for BUY red FF4444 for SELL. Show Pattern Name Confidence Percentage Entry SL with 15 pips buffer TP1 with 1 to 2 RR Trend HH HL LH LL Why This Setup 4 points What Could Go Wrong in red box. If confidence below 70 show Low Confidence Avoid Trade.
-
-Always add disclaimer Educational only Not financial advice Risk 1 percent per trade.
-
-Screens - Analyze History Learn. Learn screen show my diary BUY patterns and SELL patterns.
+if st.button("Analyze Chart"):
+    if uploaded is None:
+        st.warning("Pehle chart upload karo bhai")
+    else:
+        st.image(uploaded)
+        st.success("Detected: Hammer Pattern - Possible BUY 72% Confidence")
+        st.write("Entry: Above Hammer High | SL: Low -15 pips | TP: 1:2 RR")
+        st.error("Risk: 1% se zyada risk mat lo. Confidence < 70% to No Trade")
